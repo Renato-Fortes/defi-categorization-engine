@@ -1,37 +1,27 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
-
-// modify the interface with any CRUD methods
-// you might need
+import type { Transaction } from "@shared/schema";
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getTransactions(): Transaction[];
+  setTransactions(txs: Transaction[]): void;
+  updateTransaction(id: string, updates: Partial<Transaction>): Transaction | undefined;
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<string, User>;
+  private transactions: Transaction[] = [];
 
-  constructor() {
-    this.users = new Map();
+  getTransactions(): Transaction[] {
+    return this.transactions;
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  setTransactions(txs: Transaction[]): void {
+    this.transactions = txs;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  updateTransaction(id: string, updates: Partial<Transaction>): Transaction | undefined {
+    const idx = this.transactions.findIndex((t) => t.id === id);
+    if (idx === -1) return undefined;
+    this.transactions[idx] = { ...this.transactions[idx], ...updates };
+    return this.transactions[idx];
   }
 }
 
