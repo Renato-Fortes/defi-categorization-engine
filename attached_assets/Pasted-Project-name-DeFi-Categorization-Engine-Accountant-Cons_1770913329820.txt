@@ -1,0 +1,364 @@
+Project name: DeFi Categorization Engine + Accountant Console (Demo)
+
+Goal (what to build):
+Build a modern, user-friendly web app that demonstrates a “DeFi Categorization Engine” for crypto accountants. The app should import a CSV export from tools like Koinly/Cryptio (or a sample CSV), automatically re-label common DeFi transactions (starting with Aave Borrow/Repay) using on-chain decoding + deterministic rules, show a review UI (with confidence + explanation), allow manual overrides and bulk actions, and export a corrected CSV.
+
+This is a demo MVP to show a first customer (crypto accountant) within hours, so focus on end-to-end workflow and “wow moment” accuracy for a narrow set of transactions rather than broad protocol support.
+
+Product positioning (copy for homepage)
+
+Headline: “Auto-label DeFi transactions for accountants.”
+
+Subheadline: “Fix Koinly/Cryptio exports in minutes. Loans, repayments, swaps, LP, staking — with explanations and audit trail.”
+
+MVP Scope (must-have for demo)
+Supported use case (focus)
+
+Aave V3 Borrow and Repay categorization on ONE chain (choose Ethereum OR Arbitrum OR Base).
+
+For demo, implement the Aave Pool contract address for the chosen chain as a constant in config.
+
+Use on-chain transaction receipt log decoding to detect Aave events:
+
+Borrow → label “Loan (Borrow)”
+
+Repay → label “Loan Repayment”
+
+Everything else should be labeled “Needs Review” or keep original label.
+
+Input options
+
+Provide two ways to run the demo:
+
+Upload CSV (preferred)
+
+Use “Load Sample Dataset” button that loads a bundled demo CSV
+
+Output
+
+Export corrected CSV with extra columns:
+
+newLabel
+
+confidence
+
+reason
+
+ruleId
+
+reviewStatus (Auto, NeedsReview, ManuallyEdited)
+
+Tech Stack (use this)
+
+Frontend: Next.js + TypeScript + Tailwind + shadcn/ui
+
+Backend: Next.js API routes (same project) OR small Node/Express server (whichever is faster in Replit)
+
+CSV parsing: papaparse or csv-parse
+
+Web3: ethers (ethers.js v6)
+
+Storage: for demo, in-memory store is fine; optional SQLite for persistence
+
+Environment variables:
+
+RPC_URL (Alchemy/Infura/QuickNode)
+
+CHAIN_NAME (e.g., “arbitrum”)
+
+AAVE_POOL_ADDRESS (constant or env)
+
+Pages / UI (must be clean, modern, accountant-friendly)
+1) Landing / Dashboard
+
+“New Project” button (or skip projects and just do a single workspace)
+
+Quick explanation of workflow: Import → Auto-label → Review → Export
+
+2) Import Page
+
+Upload CSV area (drag and drop)
+
+Toggle: “Treat input as Koinly CSV” / “Generic CSV”
+
+Button: “Load Sample Dataset”
+
+After upload, show a preview table (first 20 rows)
+
+3) Review / Table Page (main demo screen)
+
+Table columns:
+
+Date/Time
+
+Wallet (if present)
+
+Chain
+
+TxHash (link out optional)
+
+Asset / Amount
+
+Original Label
+
+New Label
+
+Confidence
+
+Reason (explainability)
+
+Review Status
+
+Controls:
+
+Button: Auto-categorize
+
+Filter: All | Auto | Needs Review | Manually Edited
+
+Bulk actions:
+
+“Apply label to selected”
+
+“Mark selected as reviewed”
+
+“Create rule from selection” (for demo, store a simple rule locally)
+
+Row click opens a side panel with details:
+
+txHash
+
+detected events
+
+token movements (optional for demo)
+
+“Why we labeled this”
+
+4) Export Page / Button
+
+Export corrected CSV
+
+Also show summary metrics:
+
+“Auto-labeled: X”
+
+“Needs review: Y”
+
+“Estimated time saved: ~Z minutes” (simple estimate based on count)
+
+Data Model (internal normalized transaction object)
+
+When importing CSV, normalize rows into:
+
+id
+
+timestamp
+
+wallet (optional)
+
+chain (default from config if missing)
+
+txHash
+
+asset (optional)
+
+amount (optional)
+
+direction (optional)
+
+originalLabel (string)
+
+newLabel (string)
+
+confidence (0–1)
+
+reason (string)
+
+ruleId (string)
+
+reviewStatus (“Auto” | “NeedsReview” | “ManuallyEdited”)
+
+CSV Import Mapping (be flexible)
+
+Support these likely columns (case-insensitive). If missing, still import with txHash:
+
+txHash: txHash / TxHash / Transaction Hash
+
+timestamp: Date / Timestamp
+
+label: Label / Type / Category
+
+amount: Amount
+
+asset: Currency / Token
+
+wallet: Wallet / Address
+
+chain: Chain
+
+If columns are missing, still proceed as long as txHash exists.
+
+Categorization Engine (core logic)
+Engine contract
+
+Implement a function:
+classifyTransactions(transactions[]) -> transactions[] updated with newLabel/confidence/reason/ruleId/reviewStatus
+
+Pattern rules (implement now)
+
+Rule AAVE_BORROW_V1
+
+If tx receipt logs include Aave Pool Borrow event:
+
+newLabel = “Loan (Borrow)”
+
+confidence = 0.95
+
+reason = “Detected Aave Pool Borrow event”
+
+ruleId = “AAVE_BORROW_V1”
+
+reviewStatus = “Auto”
+
+Rule AAVE_REPAY_V1
+
+If logs include Repay event:
+
+newLabel = “Loan Repayment”
+
+confidence = 0.95
+
+reason = “Detected Aave Pool Repay event”
+
+ruleId = “AAVE_REPAY_V1”
+
+reviewStatus = “Auto”
+
+Fallback
+
+If no match:
+
+newLabel = originalLabel OR “Needs Review”
+
+confidence = 0.20
+
+reason = “No protocol rule matched”
+
+ruleId = “NO_MATCH”
+
+reviewStatus = “NeedsReview”
+
+On-chain decoding requirements
+
+Use ethers provider with RPC_URL
+
+For each txHash:
+
+getTransactionReceipt(txHash)
+
+Iterate logs
+
+Only attempt to decode logs where log.address === AAVE_POOL_ADDRESS (fast + accurate)
+
+Use Interface with ABI containing the Borrow and Repay events only
+
+Handle errors gracefully (rate limits, missing receipts):
+
+mark as NeedsReview with reason “Receipt fetch failed”
+
+Backend API Endpoints (simple)
+
+POST /api/import
+
+accepts CSV text/file
+
+returns normalized transactions list
+
+POST /api/classify
+
+accepts array of normalized transactions
+
+returns updated array with classification results
+
+POST /api/export
+
+accepts array of transactions
+
+returns downloadable CSV
+
+(Optional for demo)
+4) POST /api/rules/create
+
+accepts example selection and label
+
+stores a simple local rule:
+
+match by counterparty or originalLabel or “contains string”
+
+apply these rules before on-chain rules (or after). For demo, keep it simple.
+
+Demo dataset (must include)
+
+Include a sample.csv with at least:
+
+2 tx hashes that are Aave Borrow
+
+2 tx hashes that are Aave Repay
+
+6–10 random other hashes or placeholder rows labeled “transfer/deposit”
+
+If real tx hashes are not available, still provide a “Demo Mode” toggle that simulates classification results for the sample dataset (but keep the UI + workflow identical). In demo mode, just match txHash against a small hardcoded dictionary:
+
+txHash -> {label, confidence, reason}
+
+UX details (important)
+
+Everything must feel modern and clean (like a fintech dashboard)
+
+Show loading state during classification (“Classifying 12/120…”)
+
+Show a success toast: “Auto-labeled 38 transactions”
+
+Provide an “Exceptions Queue” filter (“Needs Review”)
+
+What NOT to build (avoid scope blowup)
+
+Do NOT build full tax calculations
+
+Do NOT implement many protocols
+
+Do NOT build full Koinly/Cryptio API integrations
+
+Do NOT build auth/multi-tenancy unless it’s trivial
+
+Focus on the core demo loop: Import → Auto-label → Review → Export
+
+How to present it (demo script)
+
+When the app runs, ensure I can do:
+
+Upload sample CSV
+
+Click “Auto-categorize”
+
+See “transfer” rows become “Loan (Borrow)” / “Loan Repayment” with confidence 0.95 and explanations
+
+Filter “Needs Review”
+
+Export corrected CSV
+
+Deliverables
+
+A running Replit app with a public URL
+
+A short README with:
+
+how to set RPC_URL and AAVE_POOL_ADDRESS
+
+how to run
+
+how to use sample dataset
+
+Plugin vs replace strategy (what should you assume for this demo)
+
+Assume this is a layer that complements Koinly/Cryptio, not a replacement.
+This demo should show: “We import your export, fix categorization, and export back.”
