@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -36,20 +37,30 @@ import {
   Pencil,
   Tag,
   Filter,
-  ExternalLink,
   Info,
+  Search,
+  Sparkles,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTransactionStore } from "@/lib/transaction-store";
 import { apiRequest } from "@/lib/queryClient";
 import type { Transaction } from "@shared/schema";
 
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.4, delay: i * 0.06, ease: [0.25, 0.46, 0.45, 0.94] },
+  }),
+};
+
 function statusBadge(status: string) {
   switch (status) {
     case "Auto":
       return <Badge variant="default" className="bg-chart-2 text-white no-default-hover-elevate no-default-active-elevate"><CheckCircle className="h-3 w-3 mr-1" />Auto</Badge>;
     case "NeedsReview":
-      return <Badge variant="secondary" className="bg-chart-4 text-white no-default-hover-elevate no-default-active-elevate"><AlertTriangle className="h-3 w-3 mr-1" />Needs Review</Badge>;
+      return <Badge variant="secondary" className="bg-chart-4 text-white no-default-hover-elevate no-default-active-elevate"><AlertTriangle className="h-3 w-3 mr-1" />Review</Badge>;
     case "ManuallyEdited":
       return <Badge variant="secondary" className="bg-chart-3 text-white no-default-hover-elevate no-default-active-elevate"><Pencil className="h-3 w-3 mr-1" />Edited</Badge>;
     default:
@@ -62,11 +73,29 @@ function confidenceBar(confidence: number) {
   const color = pct >= 80 ? "bg-chart-2" : pct >= 50 ? "bg-chart-4" : "bg-destructive";
   return (
     <div className="flex items-center gap-2">
-      <div className="w-12 h-1.5 rounded-full bg-muted overflow-visible">
-        <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
+      <div className="w-14 h-1.5 rounded-full bg-muted overflow-visible">
+        <motion.div
+          className={`h-full rounded-full ${color}`}
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        />
       </div>
-      <span className="text-xs text-muted-foreground font-mono">{pct}%</span>
+      <span className="text-xs text-muted-foreground font-mono w-8">{pct}%</span>
     </div>
+  );
+}
+
+function AnimatedNumber({ value }: { value: number }) {
+  return (
+    <motion.span
+      key={value}
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+    >
+      {value}
+    </motion.span>
   );
 }
 
@@ -183,20 +212,31 @@ export default function ReviewPage() {
 
   if (store.transactions.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <Info className="h-12 w-12 text-muted-foreground" />
+      <motion.div
+        className="flex flex-col items-center justify-center min-h-[60vh] gap-5"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4 }}
+      >
+        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+          <Info className="h-7 w-7 text-muted-foreground" />
+        </div>
         <h2 className="text-xl font-semibold text-foreground">No transactions loaded</h2>
         <p className="text-muted-foreground text-sm">Import a CSV first to start reviewing.</p>
         <Button onClick={() => navigate("/import")} data-testid="button-go-import">
           Go to Import
         </Button>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6">
-      <div className="flex flex-wrap items-center gap-3 mb-6">
+    <motion.div
+      className="max-w-7xl mx-auto px-4 py-6"
+      initial="hidden"
+      animate="visible"
+    >
+      <motion.div variants={fadeUp} custom={0} className="flex flex-wrap items-center gap-3 mb-6">
         <Button variant="ghost" size="icon" onClick={() => navigate("/import")} data-testid="button-back-import">
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -208,198 +248,255 @@ export default function ReviewPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button onClick={handleClassify} disabled={store.isClassifying} data-testid="button-classify">
-            <Zap className="h-4 w-4 mr-2" />
-            {store.isClassifying ? "Classifying..." : "Auto-categorize"}
+            {store.isClassifying ? (
+              <span className="flex items-center gap-2">
+                <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                Classifying...
+              </span>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4 mr-2" />
+                Auto-categorize
+              </>
+            )}
           </Button>
           <Button variant="outline" onClick={handleExport} data-testid="button-export">
             <Download className="h-4 w-4 mr-2" />
             Export CSV
           </Button>
         </div>
-      </div>
+      </motion.div>
 
-      {store.isClassifying && store.classificationProgress && (
-        <Card className="p-4 mb-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <Zap className="h-4 w-4 text-primary animate-pulse" />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-foreground">
-                Classifying {store.classificationProgress.current}/{store.classificationProgress.total}...
-              </p>
-              <Progress
-                value={(store.classificationProgress.current / store.classificationProgress.total) * 100}
-                className="mt-2 h-1.5"
+      <AnimatePresence>
+        {store.isClassifying && store.classificationProgress && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Card className="p-4 mb-4">
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <Zap className="h-4 w-4 text-primary animate-pulse" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">
+                    Classifying {store.classificationProgress.current}/{store.classificationProgress.total}...
+                  </p>
+                  <Progress
+                    value={(store.classificationProgress.current / store.classificationProgress.total) * 100}
+                    className="mt-2 h-1.5"
+                  />
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <motion.div variants={fadeUp} custom={1} className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+        {[
+          { label: "Total", value: stats.total, color: "text-foreground", filter: "all" as const, testId: "stat-total" },
+          { label: "Auto-labeled", value: stats.auto, color: "text-chart-2", filter: "Auto" as const, testId: "stat-auto" },
+          { label: "Needs Review", value: stats.needsReview, color: "text-chart-4", filter: "NeedsReview" as const, testId: "stat-needs-review" },
+          { label: "Edited", value: stats.manuallyEdited, color: "text-chart-3", filter: "ManuallyEdited" as const, testId: "stat-edited" },
+        ].map((s) => (
+          <Card
+            key={s.label}
+            className={`p-4 cursor-pointer hover-elevate transition-all duration-200 ${
+              store.filter === s.filter ? "ring-1 ring-primary" : ""
+            }`}
+            onClick={() => store.setFilter(s.filter)}
+            data-testid={s.testId}
+          >
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{s.label}</p>
+            <p className={`text-2xl font-bold mt-1 ${s.color}`}>
+              <AnimatedNumber value={s.value} />
+            </p>
+          </Card>
+        ))}
+      </motion.div>
+
+      <motion.div variants={fadeUp} custom={2}>
+        <Card className="overflow-hidden mb-5">
+          <div className="p-3 border-b flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <Select
+                value={store.filter}
+                onValueChange={(v: any) => store.setFilter(v)}
+              >
+                <SelectTrigger className="w-[160px]" data-testid="select-filter">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All transactions</SelectItem>
+                  <SelectItem value="Auto">Auto-labeled</SelectItem>
+                  <SelectItem value="NeedsReview">Needs Review</SelectItem>
+                  <SelectItem value="ManuallyEdited">Manually Edited</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Search..."
+                className="pl-8 max-w-[200px]"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                data-testid="input-search"
               />
             </div>
-          </div>
-        </Card>
-      )}
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-        <Card className="p-4 cursor-pointer hover-elevate" onClick={() => store.setFilter("all")} data-testid="stat-total">
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Total</p>
-          <p className="text-2xl font-bold text-foreground mt-1">{stats.total}</p>
-        </Card>
-        <Card className="p-4 cursor-pointer hover-elevate" onClick={() => store.setFilter("Auto")} data-testid="stat-auto">
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Auto-labeled</p>
-          <p className="text-2xl font-bold text-chart-2 mt-1">{stats.auto}</p>
-        </Card>
-        <Card className="p-4 cursor-pointer hover-elevate" onClick={() => store.setFilter("NeedsReview")} data-testid="stat-needs-review">
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Needs Review</p>
-          <p className="text-2xl font-bold text-chart-4 mt-1">{stats.needsReview}</p>
-        </Card>
-        <Card className="p-4 cursor-pointer hover-elevate" onClick={() => store.setFilter("ManuallyEdited")} data-testid="stat-edited">
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Edited</p>
-          <p className="text-2xl font-bold text-chart-3 mt-1">{stats.manuallyEdited}</p>
-        </Card>
-      </div>
-
-      <Card className="overflow-hidden mb-4">
-        <div className="p-3 border-b flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <Select
-              value={store.filter}
-              onValueChange={(v: any) => store.setFilter(v)}
-            >
-              <SelectTrigger className="w-[160px]" data-testid="select-filter">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All transactions</SelectItem>
-                <SelectItem value="Auto">Auto-labeled</SelectItem>
-                <SelectItem value="NeedsReview">Needs Review</SelectItem>
-                <SelectItem value="ManuallyEdited">Manually Edited</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <Input
-            placeholder="Search by hash, label, asset..."
-            className="max-w-xs"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            data-testid="input-search"
-          />
-          <div className="flex-1" />
-          {selectedArr.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">{selectedArr.length} selected</Badge>
-              <div className="flex items-center gap-1">
-                <Input
-                  placeholder="New label..."
-                  className="w-[140px]"
-                  value={bulkLabel}
-                  onChange={(e) => setBulkLabel(e.target.value)}
-                  data-testid="input-bulk-label"
-                />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleBulkApplyLabel}
-                  disabled={!bulkLabel}
-                  data-testid="button-bulk-apply"
+            <div className="flex-1" />
+            <AnimatePresence>
+              {selectedArr.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="flex flex-wrap items-center gap-2"
                 >
-                  <Tag className="h-3 w-3 mr-1" />
-                  Apply
+                  <Badge variant="secondary">{selectedArr.length} selected</Badge>
+                  <div className="flex items-center gap-1">
+                    <Input
+                      placeholder="New label..."
+                      className="w-[130px]"
+                      value={bulkLabel}
+                      onChange={(e) => setBulkLabel(e.target.value)}
+                      data-testid="input-bulk-label"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleBulkApplyLabel}
+                      disabled={!bulkLabel}
+                      data-testid="button-bulk-apply"
+                    >
+                      <Tag className="h-3 w-3 mr-1" />
+                      Apply
+                    </Button>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={handleBulkMarkReviewed} data-testid="button-bulk-reviewed">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Reviewed
+                  </Button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={allSelected}
+                      onCheckedChange={(checked) => {
+                        if (checked) store.selectAll(allFilteredIds);
+                        else store.clearSelection();
+                      }}
+                      data-testid="checkbox-select-all"
+                    />
+                  </TableHead>
+                  <TableHead className="text-xs">Date</TableHead>
+                  <TableHead className="text-xs">TxHash</TableHead>
+                  <TableHead className="text-xs">Asset</TableHead>
+                  <TableHead className="text-xs">Amount</TableHead>
+                  <TableHead className="text-xs">Original Label</TableHead>
+                  <TableHead className="text-xs">New Label</TableHead>
+                  <TableHead className="text-xs">Confidence</TableHead>
+                  <TableHead className="text-xs">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((tx, index) => (
+                  <motion.tr
+                    key={tx.id}
+                    className="cursor-pointer border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+                    onClick={() => setDetailTx(tx)}
+                    data-testid={`row-tx-${tx.id}`}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.2, delay: Math.min(index * 0.02, 0.3) }}
+                  >
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={store.selectedIds.has(tx.id)}
+                        onCheckedChange={() => store.toggleSelected(tx.id)}
+                        data-testid={`checkbox-tx-${tx.id}`}
+                      />
+                    </TableCell>
+                    <TableCell className="text-xs whitespace-nowrap text-muted-foreground">
+                      {tx.timestamp || "—"}
+                    </TableCell>
+                    <TableCell className="text-xs font-mono max-w-[120px] truncate">
+                      {tx.txHash.length > 14
+                        ? tx.txHash.slice(0, 6) + "..." + tx.txHash.slice(-4)
+                        : tx.txHash}
+                    </TableCell>
+                    <TableCell className="text-xs font-medium">{tx.asset || "—"}</TableCell>
+                    <TableCell className="text-xs font-mono">{tx.amount || "—"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{tx.originalLabel}</TableCell>
+                    <TableCell className="text-xs font-medium">{tx.newLabel}</TableCell>
+                    <TableCell>{confidenceBar(tx.confidence)}</TableCell>
+                    <TableCell>{statusBadge(tx.reviewStatus)}</TableCell>
+                  </motion.tr>
+                ))}
+                {filtered.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
+                      <div className="flex flex-col items-center gap-2">
+                        <Search className="h-5 w-5" />
+                        <span>No transactions match the current filter.</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </Card>
+      </motion.div>
+
+      <AnimatePresence>
+        {stats.auto > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Card className="p-5 bg-chart-2/5">
+              <div className="flex flex-wrap items-center justify-between gap-3" data-testid="export-summary">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Sparkles className="h-4 w-4 text-chart-2" />
+                    <p className="text-sm font-semibold text-foreground">Ready to Export</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Auto-labeled: {stats.auto} | Needs review: {stats.needsReview} |
+                    Estimated time saved: ~{Math.round(stats.auto * 1.5)} minutes
+                  </p>
+                </div>
+                <Button onClick={handleExport} data-testid="button-export-bottom">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export Corrected CSV
                 </Button>
               </div>
-              <Button size="sm" variant="outline" onClick={handleBulkMarkReviewed} data-testid="button-bulk-reviewed">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Mark Reviewed
-              </Button>
-            </div>
-          )}
-        </div>
-
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10">
-                  <Checkbox
-                    checked={allSelected}
-                    onCheckedChange={(checked) => {
-                      if (checked) store.selectAll(allFilteredIds);
-                      else store.clearSelection();
-                    }}
-                    data-testid="checkbox-select-all"
-                  />
-                </TableHead>
-                <TableHead className="text-xs">Date</TableHead>
-                <TableHead className="text-xs">TxHash</TableHead>
-                <TableHead className="text-xs">Asset</TableHead>
-                <TableHead className="text-xs">Amount</TableHead>
-                <TableHead className="text-xs">Original Label</TableHead>
-                <TableHead className="text-xs">New Label</TableHead>
-                <TableHead className="text-xs">Confidence</TableHead>
-                <TableHead className="text-xs">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((tx) => (
-                <TableRow
-                  key={tx.id}
-                  className="cursor-pointer hover-elevate"
-                  onClick={() => setDetailTx(tx)}
-                  data-testid={`row-tx-${tx.id}`}
-                >
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Checkbox
-                      checked={store.selectedIds.has(tx.id)}
-                      onCheckedChange={() => store.toggleSelected(tx.id)}
-                      data-testid={`checkbox-tx-${tx.id}`}
-                    />
-                  </TableCell>
-                  <TableCell className="text-xs whitespace-nowrap text-muted-foreground">
-                    {tx.timestamp || "—"}
-                  </TableCell>
-                  <TableCell className="text-xs font-mono max-w-[120px] truncate">
-                    {tx.txHash.length > 14
-                      ? tx.txHash.slice(0, 6) + "..." + tx.txHash.slice(-4)
-                      : tx.txHash}
-                  </TableCell>
-                  <TableCell className="text-xs font-medium">{tx.asset || "—"}</TableCell>
-                  <TableCell className="text-xs font-mono">{tx.amount || "—"}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">{tx.originalLabel}</TableCell>
-                  <TableCell className="text-xs font-medium">{tx.newLabel}</TableCell>
-                  <TableCell>{confidenceBar(tx.confidence)}</TableCell>
-                  <TableCell>{statusBadge(tx.reviewStatus)}</TableCell>
-                </TableRow>
-              ))}
-              {filtered.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                    No transactions match the current filter.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </Card>
-
-      {stats.auto > 0 && (
-        <Card className="p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3" data-testid="export-summary">
-            <div>
-              <p className="text-sm font-medium text-foreground">Export Summary</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Auto-labeled: {stats.auto} | Needs review: {stats.needsReview} |
-                Estimated time saved: ~{Math.round(stats.auto * 1.5)} minutes
-              </p>
-            </div>
-            <Button onClick={handleExport} data-testid="button-export-bottom">
-              <Download className="h-4 w-4 mr-2" />
-              Export Corrected CSV
-            </Button>
-          </div>
-        </Card>
-      )}
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <Sheet open={!!detailTx} onOpenChange={(open) => !open && setDetailTx(null)}>
         <SheetContent className="overflow-y-auto">
           {detailTx && (
-            <>
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3 }}
+            >
               <SheetHeader>
                 <SheetTitle className="text-lg">Transaction Details</SheetTitle>
               </SheetHeader>
@@ -428,18 +525,25 @@ export default function ReviewPage() {
                     <p className="text-sm font-mono text-foreground">{detailTx.amount || "—"}</p>
                   </div>
                 </div>
+
                 <div className="border-t pt-4">
-                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">
-                    Original Label
-                  </p>
-                  <p className="text-sm text-foreground">{detailTx.originalLabel}</p>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">
+                        Original Label
+                      </p>
+                      <Badge variant="secondary">{detailTx.originalLabel}</Badge>
+                    </div>
+                    <ArrowLeft className="h-4 w-4 text-muted-foreground rotate-180 shrink-0 mt-3" />
+                    <div>
+                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">
+                        New Label
+                      </p>
+                      <Badge variant="default">{detailTx.newLabel}</Badge>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">
-                    New Label
-                  </p>
-                  <p className="text-sm font-semibold text-foreground">{detailTx.newLabel}</p>
-                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">
@@ -454,19 +558,21 @@ export default function ReviewPage() {
                     {statusBadge(detailTx.reviewStatus)}
                   </div>
                 </div>
+
                 <div className="border-t pt-4">
-                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-2">
                     Why we labeled this
                   </p>
-                  <Card className="p-3 mt-1">
-                    <p className="text-sm text-foreground">{detailTx.reason}</p>
-                    <p className="text-xs text-muted-foreground mt-2 font-mono">
-                      Rule: {detailTx.ruleId}
-                    </p>
+                  <Card className="p-4">
+                    <p className="text-sm text-foreground leading-relaxed">{detailTx.reason}</p>
+                    <div className="flex items-center gap-2 mt-3 pt-3 border-t">
+                      <Badge variant="outline" className="font-mono text-xs">{detailTx.ruleId}</Badge>
+                    </div>
                   </Card>
                 </div>
+
                 <div className="border-t pt-4 space-y-3">
-                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
                     Manual Override
                   </p>
                   <Input
@@ -497,6 +603,7 @@ export default function ReviewPage() {
                   />
                   <p className="text-xs text-muted-foreground">Press Enter to apply</p>
                 </div>
+
                 {detailTx.wallet && (
                   <div>
                     <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">
@@ -506,10 +613,10 @@ export default function ReviewPage() {
                   </div>
                 )}
               </div>
-            </>
+            </motion.div>
           )}
         </SheetContent>
       </Sheet>
-    </div>
+    </motion.div>
   );
 }

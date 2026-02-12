@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,12 +14,21 @@ import {
 } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Upload, FileText, ArrowRight, ArrowLeft, Database } from "lucide-react";
+import { Upload, FileText, ArrowRight, ArrowLeft, Database, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTransactionStore } from "@/lib/transaction-store";
 import { apiRequest } from "@/lib/queryClient";
 import { SAMPLE_CSV } from "@/lib/sample-data";
 import Papa from "papaparse";
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.4, delay: i * 0.08, ease: [0.25, 0.46, 0.45, 0.94] },
+  }),
+};
 
 export default function ImportPage() {
   const [, navigate] = useLocation();
@@ -106,100 +116,124 @@ export default function ImportPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
-      <div className="flex flex-wrap items-center gap-3 mb-6">
+    <motion.div
+      className="max-w-5xl mx-auto px-4 py-8"
+      initial="hidden"
+      animate="visible"
+    >
+      <motion.div variants={fadeUp} custom={0} className="flex flex-wrap items-center gap-3 mb-8">
         <Button variant="ghost" size="icon" onClick={() => navigate("/")} data-testid="button-back">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
           <h1 className="text-2xl font-bold text-foreground">Import Transactions</h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground mt-0.5">
             Upload a CSV export from Koinly, Cryptio, or use our sample dataset.
           </p>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 space-y-4">
-          <Card
-            className={`p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-colors ${
-              isDragging ? "border-primary bg-accent" : ""
-            }`}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setIsDragging(true);
-            }}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-            data-testid="dropzone-csv"
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv"
-              className="hidden"
-              onChange={handleFileSelect}
-              data-testid="input-csv-file"
-            />
-            <Upload className="h-10 w-10 text-muted-foreground mb-3" />
-            {fileName ? (
-              <div className="space-y-1">
-                <p className="font-medium text-foreground">{fileName}</p>
-                <p className="text-sm text-muted-foreground">
-                  {previewRows.length} rows loaded
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-1">
-                <p className="font-medium text-foreground">
-                  Drop CSV file here or click to browse
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Supports Koinly, Cryptio, or generic CSV exports
-                </p>
-              </div>
-            )}
-          </Card>
-
-          {previewRows.length > 0 && (
-            <Card className="overflow-hidden">
-              <div className="p-4 border-b flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium text-sm text-foreground">Preview</span>
-                  <Badge variant="secondary">{previewRows.length} rows</Badge>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div className="lg:col-span-2 space-y-5">
+          <motion.div variants={fadeUp} custom={1}>
+            <Card
+              className={`p-10 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 border-dashed border-2 ${
+                isDragging
+                  ? "border-primary bg-primary/5"
+                  : fileName
+                    ? "border-chart-2/50 bg-chart-2/5"
+                    : "border-border"
+              }`}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setIsDragging(true);
+              }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              data-testid="dropzone-csv"
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                className="hidden"
+                onChange={handleFileSelect}
+                data-testid="input-csv-file"
+              />
+              {fileName ? (
+                <div className="space-y-2">
+                  <div className="w-12 h-12 rounded-full bg-chart-2/10 flex items-center justify-center mx-auto">
+                    <CheckCircle className="h-6 w-6 text-chart-2" />
+                  </div>
+                  <p className="font-semibold text-foreground" data-testid="text-filename">{fileName}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {previewRows.length} rows loaded — click to replace
+                  </p>
                 </div>
-              </div>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      {previewHeaders.map((h, i) => (
-                        <TableHead key={i} className="text-xs whitespace-nowrap">
-                          {h}
-                        </TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {previewRows.slice(0, 10).map((row, ri) => (
-                      <TableRow key={ri}>
-                        {row.map((cell, ci) => (
-                          <TableCell key={ci} className="text-xs whitespace-nowrap font-mono">
-                            {cell.length > 20 ? cell.slice(0, 18) + "..." : cell}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto">
+                    <Upload className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <p className="font-semibold text-foreground">
+                    Drop CSV file here or click to browse
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Supports Koinly, Cryptio, or generic CSV exports
+                  </p>
+                </div>
+              )}
             </Card>
-          )}
+          </motion.div>
+
+          <AnimatePresence>
+            {previewRows.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.35 }}
+              >
+                <Card className="overflow-hidden">
+                  <div className="p-4 border-b flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium text-sm text-foreground">Preview</span>
+                      <Badge variant="secondary">{previewRows.length} rows</Badge>
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          {previewHeaders.map((h, i) => (
+                            <TableHead key={i} className="text-xs whitespace-nowrap">
+                              {h}
+                            </TableHead>
+                          ))}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {previewRows.slice(0, 10).map((row, ri) => (
+                          <TableRow key={ri}>
+                            {row.map((cell, ci) => (
+                              <TableCell key={ci} className="text-xs whitespace-nowrap font-mono">
+                                {cell.length > 24 ? cell.slice(0, 22) + "..." : cell}
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        <div className="space-y-4">
+        <motion.div variants={fadeUp} custom={2} className="space-y-4">
           <Card className="p-5 space-y-4">
             <h3 className="font-semibold text-foreground text-sm">Import Settings</h3>
             <div className="flex items-center justify-between gap-3">
@@ -213,7 +247,7 @@ export default function ImportPage() {
                 data-testid="switch-koinly"
               />
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground leading-relaxed">
               Enable if your CSV was exported from Koinly. Otherwise, we auto-detect columns.
             </p>
           </Card>
@@ -231,7 +265,7 @@ export default function ImportPage() {
               <Database className="h-4 w-4 mr-2" />
               Load sample dataset
             </Button>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground leading-relaxed">
               12 transactions including 2 Aave Borrows and 2 Aave Repays for demo.
             </p>
           </Card>
@@ -244,7 +278,10 @@ export default function ImportPage() {
             data-testid="button-import"
           >
             {isLoading ? (
-              "Importing..."
+              <span className="flex items-center gap-2">
+                <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                Importing...
+              </span>
             ) : (
               <>
                 Import & Continue
@@ -252,8 +289,8 @@ export default function ImportPage() {
               </>
             )}
           </Button>
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }
