@@ -36,7 +36,7 @@ function App() {
             >
               <div className="max-w-7xl mx-auto px-4 h-12 flex items-center justify-between gap-3 flex-wrap">
                 <a href="/" className="flex items-center gap-2.5 font-semibold text-sm text-foreground" data-testid="link-home">
-                  <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
+                  <div className="w-7 h-7 rounded-md bg-gradient-to-br from-primary to-chart-3 flex items-center justify-center text-white text-xs font-bold">
                     D
                   </div>
                   <span className="tracking-tight">DeFi Categorizer</span>

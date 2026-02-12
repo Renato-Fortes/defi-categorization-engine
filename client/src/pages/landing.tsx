@@ -32,16 +32,22 @@ const features = [
     icon: Shield,
     title: "Audit-ready",
     description: "Every label change comes with a reason and rule ID for full traceability.",
+    color: "text-chart-1",
+    bg: "bg-chart-1/10",
   },
   {
     icon: Clock,
     title: "Save hours",
     description: "Auto-classify hundreds of DeFi transactions that tools like Koinly get wrong.",
+    color: "text-chart-2",
+    bg: "bg-chart-2/10",
   },
   {
     icon: FileText,
     title: "Protocol-aware",
     description: "Starting with Aave V3 borrow/repay detection using actual on-chain event logs.",
+    color: "text-chart-3",
+    bg: "bg-chart-3/10",
   },
 ];
 
@@ -64,14 +70,15 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <section className="flex-1 flex flex-col items-center justify-center px-4 py-20 md:py-28 text-center relative overflow-hidden">
+      <section className="flex-1 flex flex-col items-center justify-center px-4 py-24 md:py-32 text-center relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/5 blur-3xl" />
-          <div className="absolute bottom-0 left-1/4 w-[400px] h-[400px] rounded-full bg-chart-2/5 blur-3xl" />
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full bg-primary/8 blur-[100px]" />
+          <div className="absolute bottom-1/4 left-1/3 w-[500px] h-[500px] rounded-full bg-chart-3/6 blur-[120px]" />
+          <div className="absolute top-1/2 right-1/4 w-[400px] h-[400px] rounded-full bg-chart-2/5 blur-[100px]" />
         </div>
 
         <motion.div
-          className="max-w-3xl mx-auto space-y-7 relative z-10"
+          className="max-w-3xl mx-auto space-y-8 relative z-10"
           initial="hidden"
           animate="visible"
           variants={staggerContainer}
@@ -79,7 +86,7 @@ export default function Landing() {
           <motion.div
             variants={fadeUp}
             custom={0}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-md bg-accent text-accent-foreground text-sm font-medium"
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-sm font-medium"
           >
             <Zap className="h-3.5 w-3.5" />
             DeFi Categorization Engine
@@ -88,12 +95,16 @@ export default function Landing() {
           <motion.h1
             variants={fadeUp}
             custom={1}
-            className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-foreground leading-[1.1]"
+            className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] text-foreground"
           >
             Auto-label DeFi
             <br />
-            transactions{" "}
-            <span className="text-muted-foreground">for accountants.</span>
+            <span className="bg-gradient-to-r from-primary via-chart-3 to-chart-2 bg-clip-text text-transparent">
+              transactions
+            </span>{" "}
+            <span className="text-muted-foreground font-normal">
+              for accountants.
+            </span>
           </motion.h1>
 
           <motion.p
@@ -127,10 +138,29 @@ export default function Landing() {
               Try sample dataset
             </Button>
           </motion.div>
+
+          <motion.div
+            variants={fadeUp}
+            custom={4}
+            className="flex flex-wrap items-center justify-center gap-6 pt-4 text-xs text-muted-foreground"
+          >
+            <span className="flex items-center gap-1.5">
+              <CheckCircle className="h-3.5 w-3.5 text-chart-2" />
+              No signup required
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Shield className="h-3.5 w-3.5 text-chart-2" />
+              Data stays in browser
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Zap className="h-3.5 w-3.5 text-chart-2" />
+              Instant results
+            </span>
+          </motion.div>
         </motion.div>
       </section>
 
-      <section className="px-4 py-20 border-t">
+      <section className="px-4 py-20 bg-muted/30">
         <div className="max-w-5xl mx-auto">
           <motion.div
             initial="hidden"
@@ -138,30 +168,29 @@ export default function Landing() {
             viewport={{ once: true, margin: "-60px" }}
             variants={staggerContainer}
           >
-            <motion.h2
-              variants={fadeUp}
-              custom={0}
-              className="text-2xl md:text-3xl font-semibold text-center mb-3 text-foreground"
-            >
-              How it works
-            </motion.h2>
-            <motion.p
-              variants={fadeUp}
-              custom={1}
-              className="text-center text-muted-foreground mb-12 max-w-xl mx-auto"
-            >
-              Four simple steps to fix your DeFi transaction labels.
-            </motion.p>
+            <motion.div variants={fadeUp} custom={0} className="text-center mb-14">
+              <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">
+                Workflow
+              </p>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+                How it works
+              </h2>
+              <p className="text-muted-foreground mt-3 max-w-lg mx-auto">
+                Four simple steps to fix your DeFi transaction labels.
+              </p>
+            </motion.div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {steps.map((step, i) => (
                 <motion.div key={step.title} variants={fadeUp} custom={i + 2}>
-                  <Card className="p-5 h-full hover-elevate transition-all duration-300">
+                  <Card className="p-5 h-full hover-elevate transition-all duration-300 relative">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="flex items-center justify-center w-9 h-9 rounded-md bg-primary text-primary-foreground text-sm font-bold shrink-0">
                         {i + 1}
                       </div>
-                      <step.icon className="h-4 w-4 text-muted-foreground" />
+                      <div className="w-8 h-8 rounded-md bg-accent flex items-center justify-center">
+                        <step.icon className="h-4 w-4 text-accent-foreground" />
+                      </div>
                     </div>
                     <h3 className="font-semibold text-foreground mb-1.5">{step.title}</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed">
@@ -175,7 +204,7 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="px-4 py-20 border-t">
+      <section className="px-4 py-20">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial="hidden"
@@ -183,27 +212,24 @@ export default function Landing() {
             viewport={{ once: true, margin: "-60px" }}
             variants={staggerContainer}
           >
-            <motion.h2
-              variants={fadeUp}
-              custom={0}
-              className="text-2xl md:text-3xl font-semibold text-center mb-3 text-foreground"
-            >
-              Built for crypto accountants
-            </motion.h2>
-            <motion.p
-              variants={fadeUp}
-              custom={1}
-              className="text-center text-muted-foreground mb-12 max-w-xl mx-auto"
-            >
-              Accuracy, speed, and auditability — the things that matter most.
-            </motion.p>
+            <motion.div variants={fadeUp} custom={0} className="text-center mb-14">
+              <p className="text-xs font-semibold uppercase tracking-widest text-chart-2 mb-3">
+                Why us
+              </p>
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+                Built for crypto accountants
+              </h2>
+              <p className="text-muted-foreground mt-3 max-w-lg mx-auto">
+                Accuracy, speed, and auditability — the things that matter most.
+              </p>
+            </motion.div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {features.map((f, i) => (
                 <motion.div key={f.title} variants={fadeUp} custom={i + 2}>
-                  <Card className="p-6 h-full">
-                    <div className="w-10 h-10 rounded-md bg-accent flex items-center justify-center mb-4">
-                      <f.icon className="h-5 w-5 text-accent-foreground" />
+                  <Card className="p-6 h-full hover-elevate transition-all duration-300">
+                    <div className={`w-10 h-10 rounded-md ${f.bg} flex items-center justify-center mb-4`}>
+                      <f.icon className={`h-5 w-5 ${f.color}`} />
                     </div>
                     <h3 className="font-semibold text-foreground mb-1.5">{f.title}</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed">
@@ -217,7 +243,7 @@ export default function Landing() {
         </div>
       </section>
 
-      <footer className="px-4 py-8 border-t">
+      <footer className="px-4 py-8 border-t bg-muted/20">
         <p className="text-center text-xs text-muted-foreground">
           DeFi Categorization Engine — Complementing Koinly & Cryptio
         </p>

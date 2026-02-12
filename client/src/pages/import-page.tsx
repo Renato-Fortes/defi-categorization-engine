@@ -126,7 +126,10 @@ export default function ImportPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Import Transactions</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-foreground">Import Transactions</h1>
+            <Badge variant="secondary" className="text-xs font-medium">Step 1</Badge>
+          </div>
           <p className="text-sm text-muted-foreground mt-0.5">
             Upload a CSV export from Koinly, Cryptio, or use our sample dataset.
           </p>

@@ -58,11 +58,11 @@ const fadeUp = {
 function statusBadge(status: string) {
   switch (status) {
     case "Auto":
-      return <Badge variant="default" className="bg-chart-2 text-white no-default-hover-elevate no-default-active-elevate"><CheckCircle className="h-3 w-3 mr-1" />Auto</Badge>;
+      return <Badge variant="default"><CheckCircle className="h-3 w-3 mr-1" />Auto</Badge>;
     case "NeedsReview":
-      return <Badge variant="secondary" className="bg-chart-4 text-white no-default-hover-elevate no-default-active-elevate"><AlertTriangle className="h-3 w-3 mr-1" />Review</Badge>;
+      return <Badge variant="secondary"><AlertTriangle className="h-3 w-3 mr-1" />Review</Badge>;
     case "ManuallyEdited":
-      return <Badge variant="secondary" className="bg-chart-3 text-white no-default-hover-elevate no-default-active-elevate"><Pencil className="h-3 w-3 mr-1" />Edited</Badge>;
+      return <Badge variant="outline"><Pencil className="h-3 w-3 mr-1" />Edited</Badge>;
     default:
       return <Badge variant="secondary">{status}</Badge>;
   }
@@ -241,7 +241,10 @@ export default function ReviewPage() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-bold text-foreground">Review Transactions</h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl font-bold text-foreground">Review Transactions</h1>
+            <Badge variant="secondary" className="text-xs font-medium">Step 2</Badge>
+          </div>
           <p className="text-sm text-muted-foreground">
             {stats.total} transactions loaded
           </p>
@@ -297,10 +300,10 @@ export default function ReviewPage() {
 
       <motion.div variants={fadeUp} custom={1} className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
         {[
-          { label: "Total", value: stats.total, color: "text-foreground", filter: "all" as const, testId: "stat-total" },
-          { label: "Auto-labeled", value: stats.auto, color: "text-chart-2", filter: "Auto" as const, testId: "stat-auto" },
-          { label: "Needs Review", value: stats.needsReview, color: "text-chart-4", filter: "NeedsReview" as const, testId: "stat-needs-review" },
-          { label: "Edited", value: stats.manuallyEdited, color: "text-chart-3", filter: "ManuallyEdited" as const, testId: "stat-edited" },
+          { label: "Total", value: stats.total, color: "text-foreground", dot: "bg-foreground/30", filter: "all" as const, testId: "stat-total" },
+          { label: "Auto-labeled", value: stats.auto, color: "text-chart-2", dot: "bg-chart-2", filter: "Auto" as const, testId: "stat-auto" },
+          { label: "Needs Review", value: stats.needsReview, color: "text-chart-4", dot: "bg-chart-4", filter: "NeedsReview" as const, testId: "stat-needs-review" },
+          { label: "Edited", value: stats.manuallyEdited, color: "text-chart-3", dot: "bg-chart-3", filter: "ManuallyEdited" as const, testId: "stat-edited" },
         ].map((s) => (
           <Card
             key={s.label}
@@ -310,8 +313,11 @@ export default function ReviewPage() {
             onClick={() => store.setFilter(s.filter)}
             data-testid={s.testId}
           >
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{s.label}</p>
-            <p className={`text-2xl font-bold mt-1 ${s.color}`}>
+            <div className="flex items-center gap-2 mb-1">
+              <div className={`w-2 h-2 rounded-full ${s.dot}`} />
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{s.label}</p>
+            </div>
+            <p className={`text-2xl font-bold ${s.color}`}>
               <AnimatedNumber value={s.value} />
             </p>
           </Card>
