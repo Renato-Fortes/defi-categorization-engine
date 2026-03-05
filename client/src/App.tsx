@@ -15,6 +15,8 @@ import ImportPage from "@/pages/import-page";
 import ReviewPage from "@/pages/review-page";
 import Contact from "@/pages/contact";
 import Login from "@/pages/login";
+import Register from "@/pages/register";
+import VerifyEmail from "@/pages/verify-email";
 
 function Router() {
   return (
@@ -24,16 +26,18 @@ function Router() {
       <Route path="/review" component={ReviewPage} />
       <Route path="/contact" component={Contact} />
       <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
+      <Route path="/verify-email" component={VerifyEmail} />
       <Route component={NotFound} />
     </Switch>
   );
 }
 
 function Navbar() {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
   const [location] = useLocation();
 
-  const isLoginPage = location === "/login";
+  const isAuthPage = location === "/login" || location === "/register";
 
   return (
     <motion.nav
@@ -96,14 +100,14 @@ function Navbar() {
                   variant="ghost"
                   size="sm"
                   className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-                  onClick={() => { window.location.href = "/api/logout"; }}
+                  onClick={() => logout()}
                   data-testid="button-logout"
                 >
                   <LogOut className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">Logout</span>
                 </Button>
               </div>
-            ) : !isLoginPage ? (
+            ) : !isAuthPage ? (
               <Link href="/login">
                 <Button
                   size="sm"

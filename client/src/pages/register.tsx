@@ -3,13 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  ArrowRight, Shield, Zap, Lock, Sparkles, Eye, EyeOff, CheckCircle
+  Shield, Zap, Lock, ArrowRight, Eye, EyeOff, CheckCircle
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation, Link } from "wouter";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
 
 const itemFade = {
   hidden: { opacity: 0, y: 24 },
@@ -35,17 +34,19 @@ function GlowOrb({ className, delay = 0 }: { className: string; delay?: number }
   );
 }
 
-export default function Login() {
-  const { user, isLoading, isAuthenticated } = useAuth();
+export default function Register() {
+  const { isLoading, isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({ email: "", password: "" });
-
-  const searchParams = new URLSearchParams(window.location.search);
-  const justRegistered = searchParams.get("registered") === "true";
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -53,26 +54,23 @@ export default function Login() {
     }
   }, [isLoading, isAuthenticated, navigate]);
 
-  useEffect(() => {
-    if (justRegistered) {
-      toast({
-        title: "Account created",
-        description: "Please check your email and click the verification link before signing in.",
-      });
-    }
-  }, [justRegistered]);
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.firstName.trim()) newErrors.firstName = "Name is required";
+    if (!formData.email.trim()) newErrors.email = "Email is required";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = "Invalid email";
+    if (formData.password.length < 8) newErrors.password = "Password must be at least 8 characters";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!formData.email || !formData.password) {
-      toast({ title: "Error", description: "Please enter your email and password.", variant: "destructive" });
-      return;
-    }
+    if (!validate()) return;
 
     setIsSubmitting(true);
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -82,12 +80,23 @@ export default function Login() {
       const data = await res.json();
 
       if (!res.ok) {
-        toast({ title: "Sign in failed", description: data.message, variant: "destructive" });
+        toast({ title: "Registration failed", description: data.message, variant: "destructive" });
         return;
       }
 
-      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      navigate("/import");
+      toast({
+        title: "Account created",
+        description: data.message,
+      });
+
+      if (data.verifyUrl) {
+        toast({
+          title: "Verification link",
+          description: "Check the server console for your verification link (no email service configured yet).",
+        });
+      }
+
+      navigate("/login?registered=true");
     } catch (err: any) {
       toast({ title: "Error", description: "Something went wrong. Please try again.", variant: "destructive" });
     } finally {
@@ -107,42 +116,6 @@ export default function Login() {
     );
   }
 
-  if (isAuthenticated && user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-6">
-        <motion.div
-          className="max-w-md w-full text-center space-y-8 p-10 rounded-2xl border bg-card/50 backdrop-blur-xl"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <motion.div
-            className="w-20 h-20 rounded-2xl bg-emerald-500/10 flex items-center justify-center mx-auto"
-            animate={{ rotate: [0, 5, -5, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <Sparkles className="h-9 w-9 text-emerald-500" />
-          </motion.div>
-          <div>
-            <h2 className="text-3xl font-bold text-foreground mb-3">Welcome back</h2>
-            <p className="text-muted-foreground text-lg">
-              Signed in as <span className="font-medium text-foreground">{user.email || user.firstName || "User"}</span>
-            </p>
-          </div>
-          <Button
-            size="lg"
-            className="w-full h-13 gap-2.5 text-base rounded-xl shadow-lg shadow-primary/20"
-            onClick={() => navigate("/import")}
-            data-testid="button-go-to-app"
-          >
-            Go to dashboard
-            <ArrowRight className="h-5 w-5" />
-          </Button>
-        </motion.div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
       <div className="lg:w-[55%] relative overflow-hidden flex items-center justify-center px-8 lg:px-16 py-20 lg:py-0">
@@ -152,11 +125,11 @@ export default function Login() {
 
           <svg className="absolute inset-0 w-full h-full opacity-[0.015] dark:opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <pattern id="login-grid" width="60" height="60" patternUnits="userSpaceOnUse">
+              <pattern id="register-grid" width="60" height="60" patternUnits="userSpaceOnUse">
                 <path d="M 60 0 L 0 0 0 60" fill="none" stroke="currentColor" strokeWidth="0.5" />
               </pattern>
             </defs>
-            <rect width="100%" height="100%" fill="url(#login-grid)" />
+            <rect width="100%" height="100%" fill="url(#register-grid)" />
           </svg>
         </div>
 
@@ -174,15 +147,15 @@ export default function Login() {
           </motion.div>
 
           <motion.h1 variants={itemFade} custom={1} className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground tracking-tight leading-[0.95] mb-8">
-            Classify with
+            Start classifying
             <br />
             <span className="bg-gradient-to-r from-primary via-chart-3 to-chart-2 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient-shift">
-              confidence.
+              today.
             </span>
           </motion.h1>
 
           <motion.p variants={itemFade} custom={2} className="text-lg text-muted-foreground leading-relaxed mb-10">
-            Sign in to access your dashboard, import transaction CSVs, and start auto-labeling DeFi transactions with audit-ready precision.
+            Create your account to start auto-labeling DeFi transactions with audit-ready precision. Free to use, no credit card required.
           </motion.p>
 
           <motion.div variants={itemFade} custom={3} className="space-y-4">
@@ -210,27 +183,39 @@ export default function Login() {
           variants={stagger}
         >
           <motion.div variants={itemFade} custom={0} className="space-y-3">
-            <h2 className="text-3xl font-bold text-foreground tracking-tight">Welcome back</h2>
+            <h2 className="text-3xl font-bold text-foreground tracking-tight">Create account</h2>
             <p className="text-muted-foreground">
-              Sign in to your account to continue
+              Fill in your details to get started
             </p>
           </motion.div>
 
-          {justRegistered && (
-            <motion.div
-              variants={itemFade}
-              custom={0.5}
-              className="flex items-start gap-3 p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20"
-            >
-              <CheckCircle className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
-              <div className="text-sm">
-                <p className="font-medium text-foreground">Account created</p>
-                <p className="text-muted-foreground mt-0.5">Check your email for the verification link before signing in.</p>
-              </div>
-            </motion.div>
-          )}
-
           <motion.form variants={itemFade} custom={1} onSubmit={handleSubmit} className="space-y-5">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName" className="text-sm font-medium">First name</Label>
+                <Input
+                  id="firstName"
+                  placeholder="Jane"
+                  className="h-12 rounded-xl"
+                  value={formData.firstName}
+                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  data-testid="input-first-name"
+                />
+                {errors.firstName && <p className="text-xs text-destructive">{errors.firstName}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName" className="text-sm font-medium">Last name</Label>
+                <Input
+                  id="lastName"
+                  placeholder="Smith"
+                  className="h-12 rounded-xl"
+                  value={formData.lastName}
+                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  data-testid="input-last-name"
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">Email</Label>
               <Input
@@ -242,6 +227,7 @@ export default function Login() {
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 data-testid="input-email"
               />
+              {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
             </div>
 
             <div className="space-y-2">
@@ -250,7 +236,7 @@ export default function Login() {
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder="At least 8 characters"
                   className="h-12 rounded-xl pr-12"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -265,6 +251,8 @@ export default function Login() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
+              <p className="text-xs text-muted-foreground">Must be at least 8 characters</p>
             </div>
 
             <Button
@@ -272,16 +260,16 @@ export default function Login() {
               size="lg"
               className="w-full h-14 gap-2.5 text-base rounded-xl shadow-lg shadow-primary/20"
               disabled={isSubmitting}
-              data-testid="button-login"
+              data-testid="button-register"
             >
               {isSubmitting ? (
                 <span className="flex items-center gap-2">
                   <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                  Signing in...
+                  Creating account...
                 </span>
               ) : (
                 <>
-                  Sign in
+                  Create account
                   <ArrowRight className="h-5 w-5" />
                 </>
               )}
@@ -289,10 +277,14 @@ export default function Login() {
           </motion.form>
 
           <motion.div variants={itemFade} custom={2} className="space-y-4">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <CheckCircle className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+              <span>You'll receive a verification email to confirm your account</span>
+            </div>
             <p className="text-sm text-center text-muted-foreground">
-              Don't have an account?{" "}
-              <Link href="/register" className="text-primary font-medium hover:underline" data-testid="link-register">
-                Create account
+              Already have an account?{" "}
+              <Link href="/login" className="text-primary font-medium hover:underline" data-testid="link-login">
+                Sign in
               </Link>
             </p>
           </motion.div>
