@@ -7,7 +7,7 @@ A web app that demonstrates a DeFi Categorization Engine for crypto accountants.
 - **Frontend**: React + TypeScript + Tailwind + shadcn/ui (Vite) + framer-motion v10
 - **Backend**: Express API routes (same server)
 - **Database**: PostgreSQL via Drizzle ORM (users, sessions tables)
-- **Auth**: Custom email/password auth with bcryptjs password hashing, email verification via Resend (optional), express-session with PostgreSQL session store
+- **Auth**: Custom email/password auth with bcryptjs password hashing + Google OAuth (passport-google-oauth20), email verification via Resend integration, express-session with PostgreSQL session store
 - **State**: Zustand for client-side transaction state, in-memory server storage for transactions
 - **CSV**: papaparse for parsing/generating CSV
 - **Classification**: Demo mode with hardcoded tx hash matching; optional on-chain mode via ethers.js
@@ -48,8 +48,8 @@ A web app that demonstrates a DeFi Categorization Engine for crypto accountants.
 ## Environment Variables
 - `DATABASE_URL` - PostgreSQL connection string (auto-provisioned)
 - `SESSION_SECRET` - Session encryption secret (auto-provisioned)
-- `RESEND_API_KEY` - Resend API key for sending verification emails (optional, falls back to console logging)
-- `RESEND_FROM_EMAIL` - From address for emails (optional, defaults to onboarding@resend.dev)
+- `GOOGLE_CLIENT_ID` - Google OAuth client ID (optional, Gmail sign-in works when set)
+- `GOOGLE_CLIENT_SECRET` - Google OAuth client secret (optional, Gmail sign-in works when set)
 - `RPC_URL` - Alchemy/Infura RPC endpoint (optional, demo mode works without it)
 - `CHAIN_NAME` - e.g. "arbitrum" (default)
 - `AAVE_POOL_ADDRESS` - Aave V3 Pool contract address (has default for Arbitrum)

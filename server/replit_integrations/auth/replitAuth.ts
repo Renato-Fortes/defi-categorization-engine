@@ -39,39 +39,35 @@ export function getSession() {
 async function sendVerificationEmail(email: string, token: string, hostname: string, protocol: string) {
   const verifyUrl = `${protocol}://${hostname}/verify-email?token=${token}`;
 
-  if (process.env.RESEND_API_KEY) {
-    try {
-      const { Resend } = await import("resend");
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      await resend.emails.send({
-        from: process.env.RESEND_FROM_EMAIL || "DeFi Categorizer <onboarding@resend.dev>",
-        to: email,
-        subject: "Verify your email — DeFi Categorizer",
-        html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
-            <h1 style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Verify your email</h1>
-            <p style="color: #666; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
-              Click the button below to verify your email address and activate your DeFi Categorizer account.
-            </p>
-            <a href="${verifyUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
-              Verify Email
-            </a>
-            <p style="color: #999; font-size: 13px; margin-top: 32px;">
-              If you didn't create an account, you can safely ignore this email.
-            </p>
-          </div>
-        `,
-      });
-      return { sent: true };
-    } catch (err) {
-      console.error("Failed to send verification email via Resend:", err);
-      return { sent: false, verifyUrl };
-    }
+  try {
+    const { getUncachableResendClient } = await import("../resend/resendClient");
+    const { client, fromEmail } = await getUncachableResendClient();
+    await client.emails.send({
+      from: fromEmail || "DeFi Categorizer <onboarding@resend.dev>",
+      to: email,
+      subject: "Verify your email — DeFi Categorizer",
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
+          <h1 style="font-size: 24px; font-weight: 700; margin-bottom: 16px;">Verify your email</h1>
+          <p style="color: #666; font-size: 16px; line-height: 1.6; margin-bottom: 24px;">
+            Click the button below to verify your email address and activate your DeFi Categorizer account.
+          </p>
+          <a href="${verifyUrl}" style="display: inline-block; background: #2563eb; color: white; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px;">
+            Verify Email
+          </a>
+          <p style="color: #999; font-size: 13px; margin-top: 32px;">
+            If you didn't create an account, you can safely ignore this email.
+          </p>
+        </div>
+      `,
+    });
+    console.log(`[EMAIL] Verification email sent to ${email}`);
+    return { sent: true };
+  } catch (err) {
+    console.error("Failed to send verification email via Resend:", err);
+    console.log(`\n[EMAIL FALLBACK] Verification link for ${email}: ${verifyUrl}\n`);
+    return { sent: false, verifyUrl };
   }
-
-  console.log(`\n[EMAIL VERIFICATION] No email service configured.`);
-  console.log(`Verification link for ${email}: ${verifyUrl}\n`);
-  return { sent: false, verifyUrl };
 }
 
 export async function setupAuth(app: Express) {
@@ -189,9 +185,8 @@ export async function setupAuth(app: Express) {
       return res.status(201).json({
         message: result.sent
           ? "Account created. Please check your email to verify your account."
-          : "Account created. Check the server console for the verification link.",
+          : "Account created. We couldn't send the verification email right now. Please try again.",
         emailSent: result.sent,
-        verifyUrl: result.sent ? undefined : result.verifyUrl,
       });
     } catch (err: any) {
       console.error("Registration error:", err);

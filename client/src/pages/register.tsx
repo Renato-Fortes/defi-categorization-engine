@@ -34,7 +34,27 @@ function GlowOrb({ className, delay = 0 }: { className: string; delay?: number }
   );
 }
 
-function SuccessScreen({ email }: { email: string }) {
+function SuccessScreen({ email, emailSent }: { email: string; emailSent: boolean }) {
+  const { toast } = useToast();
+  const [resending, setResending] = useState(false);
+
+  const handleResend = async () => {
+    setResending(true);
+    try {
+      const res = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      toast({ title: "Verification email", description: data.message });
+    } catch {
+      toast({ title: "Error", description: "Failed to resend. Please try again.", variant: "destructive" });
+    } finally {
+      setResending(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center px-6">
       <motion.div
@@ -68,7 +88,9 @@ function SuccessScreen({ email }: { email: string }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
           >
-            We've sent a verification email to
+            {emailSent
+              ? "We've sent a verification email to"
+              : "Please verify your account. A verification email will be sent to"}
           </motion.p>
           <motion.p
             className="text-foreground font-semibold text-lg mt-2"
@@ -105,6 +127,7 @@ function SuccessScreen({ email }: { email: string }) {
         </motion.div>
 
         <motion.div
+          className="space-y-3"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
@@ -121,14 +144,23 @@ function SuccessScreen({ email }: { email: string }) {
           </Link>
         </motion.div>
 
-        <motion.p
-          className="text-xs text-muted-foreground"
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
         >
-          Didn't receive the email? Check your spam folder or try registering again.
-        </motion.p>
+          <p className="text-xs text-muted-foreground mb-2">
+            Didn't receive the email? Check your spam folder or
+          </p>
+          <button
+            onClick={handleResend}
+            disabled={resending}
+            className="text-xs text-primary font-medium hover:underline disabled:opacity-50"
+            data-testid="button-resend-verification"
+          >
+            {resending ? "Sending..." : "Resend verification email"}
+          </button>
+        </motion.div>
       </motion.div>
     </div>
   );
@@ -141,6 +173,7 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
+  const [emailWasSent, setEmailWasSent] = useState(true);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -185,6 +218,7 @@ export default function Register() {
         return;
       }
 
+      setEmailWasSent(data.emailSent !== false);
       setRegisteredEmail(formData.email);
     } catch (err: any) {
       toast({ title: "Error", description: "Something went wrong. Please try again.", variant: "destructive" });
@@ -206,7 +240,7 @@ export default function Register() {
   }
 
   if (registeredEmail) {
-    return <SuccessScreen email={registeredEmail} />;
+    return <SuccessScreen email={registeredEmail} emailSent={emailWasSent} />;
   }
 
   return (
