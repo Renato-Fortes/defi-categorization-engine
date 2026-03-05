@@ -50,6 +50,4 @@ export const bulkUpdateSchema = z.object({
 
 export type BulkUpdate = z.infer<typeof bulkUpdateSchema>;
 
-// Keep these for compatibility but we don't use DB
-export type User = { id: string; username: string; password: string };
-export type InsertUser = { username: string; password: string };
+export * from "./models/auth";
