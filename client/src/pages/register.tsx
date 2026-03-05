@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Shield, Zap, Lock, ArrowRight, Eye, EyeOff, CheckCircle
+  Shield, Zap, Lock, ArrowRight, Eye, EyeOff, CheckCircle, Mail, MailCheck
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation, Link } from "wouter";
@@ -34,12 +34,113 @@ function GlowOrb({ className, delay = 0 }: { className: string; delay?: number }
   );
 }
 
+function SuccessScreen({ email }: { email: string }) {
+  return (
+    <div className="min-h-screen flex items-center justify-center px-6">
+      <motion.div
+        className="max-w-md w-full text-center space-y-8 p-10 rounded-2xl border bg-card/50 backdrop-blur-xl"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        <motion.div
+          className="w-20 h-20 rounded-2xl bg-emerald-500/10 flex items-center justify-center mx-auto"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
+        >
+          <MailCheck className="h-9 w-9 text-emerald-500" />
+        </motion.div>
+
+        <div>
+          <motion.h2
+            className="text-3xl font-bold text-foreground mb-3"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            data-testid="text-register-success"
+          >
+            Thank you for registering!
+          </motion.h2>
+          <motion.p
+            className="text-muted-foreground text-lg leading-relaxed"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            We've sent a verification email to
+          </motion.p>
+          <motion.p
+            className="text-foreground font-semibold text-lg mt-2"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            data-testid="text-registered-email"
+          >
+            {email}
+          </motion.p>
+        </div>
+
+        <motion.div
+          className="p-5 rounded-xl bg-muted/30 border text-left space-y-3"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+        >
+          <p className="text-sm font-medium text-foreground">Next steps:</p>
+          <div className="space-y-2.5">
+            {[
+              "Open your email inbox",
+              "Click the verification link in the email",
+              "Come back here and sign in",
+            ].map((step, i) => (
+              <div key={i} className="flex items-start gap-2.5">
+                <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center mt-0.5 shrink-0">
+                  <span className="text-[10px] font-bold text-primary">{i + 1}</span>
+                </div>
+                <span className="text-sm text-muted-foreground">{step}</span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7 }}
+        >
+          <Link href="/login">
+            <Button
+              size="lg"
+              className="w-full h-13 gap-2.5 text-base rounded-xl shadow-lg shadow-primary/20"
+              data-testid="button-go-to-login"
+            >
+              Go to sign in
+              <ArrowRight className="h-5 w-5" />
+            </Button>
+          </Link>
+        </motion.div>
+
+        <motion.p
+          className="text-xs text-muted-foreground"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8 }}
+        >
+          Didn't receive the email? Check your spam folder or try registering again.
+        </motion.p>
+      </motion.div>
+    </div>
+  );
+}
+
 export default function Register() {
   const { isLoading, isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -84,19 +185,7 @@ export default function Register() {
         return;
       }
 
-      toast({
-        title: "Account created",
-        description: data.message,
-      });
-
-      if (data.verifyUrl) {
-        toast({
-          title: "Verification link",
-          description: "Check the server console for your verification link (no email service configured yet).",
-        });
-      }
-
-      navigate("/login?registered=true");
+      setRegisteredEmail(formData.email);
     } catch (err: any) {
       toast({ title: "Error", description: "Something went wrong. Please try again.", variant: "destructive" });
     } finally {
@@ -114,6 +203,10 @@ export default function Register() {
         />
       </div>
     );
+  }
+
+  if (registeredEmail) {
+    return <SuccessScreen email={registeredEmail} />;
   }
 
   return (
@@ -278,7 +371,7 @@ export default function Register() {
 
           <motion.div variants={itemFade} custom={2} className="space-y-4">
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <CheckCircle className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+              <Mail className="h-3.5 w-3.5 text-primary shrink-0" />
               <span>You'll receive a verification email to confirm your account</span>
             </div>
             <p className="text-sm text-center text-muted-foreground">

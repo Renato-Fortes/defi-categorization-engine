@@ -3,6 +3,8 @@ import type { Express, RequestHandler } from "express";
 import connectPg from "connect-pg-simple";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import passport from "passport";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { authStorage } from "./storage";
 
 declare module "express-session" {
@@ -75,6 +77,77 @@ async function sendVerificationEmail(email: string, token: string, hostname: str
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
   app.use(getSession());
+
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    passport.use(
+      new GoogleStrategy(
+        {
+          clientID: process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          callbackURL: "/api/auth/google/callback",
+        },
+        async (_accessToken, _refreshToken, profile, done) => {
+          try {
+            const email = profile.emails?.[0]?.value;
+            if (!email) {
+              return done(new Error("No email found in Google profile"));
+            }
+            const user = await authStorage.upsertGoogleUser(
+              profile.id,
+              email,
+              profile.name?.givenName || null,
+              profile.name?.familyName || null,
+              profile.photos?.[0]?.value || null
+            );
+            done(null, user);
+          } catch (err) {
+            done(err as Error);
+          }
+        }
+      )
+    );
+
+    passport.serializeUser((user: any, done) => {
+      done(null, user.id);
+    });
+
+    passport.deserializeUser(async (id: string, done) => {
+      try {
+        const user = await authStorage.getUser(id);
+        done(null, user || null);
+      } catch (err) {
+        done(err);
+      }
+    });
+
+    app.use(passport.initialize());
+    app.use(passport.session());
+
+    app.get("/api/auth/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+
+    app.get(
+      "/api/auth/google/callback",
+      passport.authenticate("google", { failureRedirect: "/login?error=google_failed" }),
+      (req, res) => {
+        const user = req.user as any;
+        if (user) {
+          req.session.userId = user.id;
+          req.session.save(() => {
+            res.redirect("/import");
+          });
+        } else {
+          res.redirect("/login?error=google_failed");
+        }
+      }
+    );
+
+    console.log("[AUTH] Google OAuth configured");
+  } else {
+    app.get("/api/auth/google", (_req, res) => {
+      res.status(501).json({ message: "Google sign-in is not configured. Please use email/password to create an account." });
+    });
+    console.log("[AUTH] Google OAuth not configured (missing GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET)");
+  }
 
   app.post("/api/auth/register", async (req, res) => {
     try {

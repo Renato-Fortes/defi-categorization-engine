@@ -97,6 +97,28 @@ function LeftPanel() {
 }
 
 function ChoiceView({ onSelectEmail }: { onSelectEmail: () => void }) {
+  const { toast } = useToast();
+
+  const handleGoogleLogin = async () => {
+    try {
+      const res = await fetch("/api/auth/google", { redirect: "manual" });
+      if (res.type === "opaqueredirect" || res.status === 0) {
+        window.location.href = "/api/auth/google";
+      } else if (res.ok || res.status === 302) {
+        window.location.href = "/api/auth/google";
+      } else {
+        const data = await res.json().catch(() => null);
+        toast({
+          title: "Google sign-in unavailable",
+          description: data?.message || "Google sign-in is not configured yet. Please create an account with email instead.",
+          variant: "destructive",
+        });
+      }
+    } catch {
+      window.location.href = "/api/auth/google";
+    }
+  };
+
   return (
     <motion.div
       className="max-w-sm w-full space-y-10"
@@ -116,7 +138,7 @@ function ChoiceView({ onSelectEmail }: { onSelectEmail: () => void }) {
           size="lg"
           variant="outline"
           className="w-full gap-3.5 text-base h-14 rounded-xl"
-          onClick={() => { window.location.href = "/api/login"; }}
+          onClick={handleGoogleLogin}
           data-testid="button-login-google"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">

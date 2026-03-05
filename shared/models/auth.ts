@@ -20,6 +20,7 @@ export const users = pgTable("users", {
   passwordHash: varchar("password_hash"),
   emailVerified: boolean("email_verified").default(false),
   verificationToken: varchar("verification_token"),
+  googleId: varchar("google_id").unique(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
