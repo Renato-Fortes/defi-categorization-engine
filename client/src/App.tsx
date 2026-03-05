@@ -104,15 +104,16 @@ function Navbar() {
                 </Button>
               </div>
             ) : !isLoginPage ? (
-              <Button
-                size="sm"
-                className="h-8 px-4 gap-1.5 text-xs rounded-lg shadow-sm"
-                onClick={() => { window.location.href = "/api/login"; }}
-                data-testid="button-nav-login"
-              >
-                <LogIn className="h-3.5 w-3.5" />
-                Sign in
-              </Button>
+              <Link href="/login">
+                <Button
+                  size="sm"
+                  className="h-8 px-4 gap-1.5 text-xs rounded-lg shadow-sm"
+                  data-testid="button-nav-login"
+                >
+                  <LogIn className="h-3.5 w-3.5" />
+                  Sign in
+                </Button>
+              </Link>
             ) : null
           )}
         </div>
