@@ -13,11 +13,11 @@ A web app that demonstrates a DeFi Categorization Engine for crypto accountants.
 - **Classification**: Demo mode with hardcoded tx hash matching; optional on-chain mode via ethers.js
 
 ## Pages
-- `/` - Cinematic landing page with animated hero, stats, workflow, features, code preview
+- `/` - Anthropic.com-inspired cinematic landing page: full-viewport hero with typewriter code animation, animated gradient text, protocol marquee ticker, animated counter stats (10x/98%/50+), 4-step workflow cards, live classification demo, 6 feature cards with hover effects, glow orb animations, scroll progress bar
 - `/import` - CSV upload (drag & drop), sample dataset loading, preview table
 - `/review` - Main review table with filtering, bulk actions, detail side panel, export
-- `/contact` - Contact form with email, subject, message fields
-- `/login` - Split-screen login page with Google/email sign-in via Replit Auth
+- `/contact` - Cinematic contact page with glassmorphic form card, contact info cards, enterprise CTA
+- `/login` - Split-screen login: left side with branding/value props/feature bullets, right side with Google/email sign-in via Replit Auth
 
 ## API Routes
 - `GET /api/login` - Begin Replit Auth login flow

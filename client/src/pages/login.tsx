@@ -1,14 +1,13 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import {
-  ArrowRight, Shield, Zap, Lock, Sparkles
+  ArrowRight, Shield, Zap, Lock, Sparkles, CheckCircle
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { useEffect } from "react";
 
-const fadeUp = {
+const itemFade = {
   hidden: { opacity: 0, y: 24 },
   visible: (i: number) => ({
     opacity: 1,
@@ -17,26 +16,17 @@ const fadeUp = {
   }),
 };
 
-const staggerContainer = {
+const stagger = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.08 } },
+  visible: { transition: { staggerChildren: 0.1 } },
 };
 
-function FloatingOrb({ delay, x, y, size, color }: { delay: number; x: string; y: string; size: number; color: string }) {
+function GlowOrb({ className, delay = 0 }: { className: string; delay?: number }) {
   return (
     <motion.div
-      className={`absolute rounded-full ${color}`}
-      style={{ left: x, top: y, width: size, height: size }}
-      animate={{
-        y: [0, -15, 0],
-        opacity: [0.4, 0.8, 0.4],
-      }}
-      transition={{
-        duration: 5,
-        delay,
-        repeat: Infinity,
-        ease: "easeInOut",
-      }}
+      className={`absolute rounded-full blur-[120px] pointer-events-none ${className}`}
+      animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+      transition={{ duration: 8, delay, repeat: Infinity, ease: "easeInOut" }}
     />
   );
 }
@@ -55,7 +45,7 @@ export default function Login() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <motion.div
-          className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full"
+          className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full"
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
         />
@@ -65,39 +55,52 @@ export default function Login() {
 
   if (isAuthenticated && user) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <Card className="p-8 max-w-md w-full text-center space-y-6">
-          <div className="w-16 h-16 rounded-full bg-chart-2/10 flex items-center justify-center mx-auto">
-            <Sparkles className="h-8 w-8 text-chart-2" />
-          </div>
+      <div className="min-h-screen flex items-center justify-center px-6">
+        <motion.div
+          className="max-w-md w-full text-center space-y-8 p-10 rounded-2xl border bg-card/50 backdrop-blur-xl"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <motion.div
+            className="w-20 h-20 rounded-2xl bg-emerald-500/10 flex items-center justify-center mx-auto"
+            animate={{ rotate: [0, 5, -5, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <Sparkles className="h-9 w-9 text-emerald-500" />
+          </motion.div>
           <div>
-            <h2 className="text-2xl font-bold text-foreground mb-2">Welcome back!</h2>
-            <p className="text-muted-foreground">
-              You're signed in as <span className="font-medium text-foreground">{user.email || user.firstName || "User"}</span>
+            <h2 className="text-3xl font-bold text-foreground mb-3">Welcome back</h2>
+            <p className="text-muted-foreground text-lg">
+              Signed in as <span className="font-medium text-foreground">{user.email || user.firstName || "User"}</span>
             </p>
           </div>
-          <Button size="lg" className="w-full gap-2" onClick={() => navigate("/import")} data-testid="button-go-to-app">
+          <Button
+            size="lg"
+            className="w-full h-13 gap-2.5 text-base rounded-xl shadow-lg shadow-primary/20"
+            onClick={() => navigate("/import")}
+            data-testid="button-go-to-app"
+          >
             Go to dashboard
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-5 w-5" />
           </Button>
-        </Card>
+        </motion.div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
-      <div className="lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-chart-3/5 flex items-center justify-center px-8 py-16 lg:py-0">
+      <div className="lg:w-[55%] relative overflow-hidden flex items-center justify-center px-8 lg:px-16 py-20 lg:py-0">
         <div className="absolute inset-0 pointer-events-none">
-          <FloatingOrb delay={0} x="15%" y="20%" size={80} color="bg-primary/10" />
-          <FloatingOrb delay={1} x="70%" y="15%" size={60} color="bg-chart-3/10" />
-          <FloatingOrb delay={2} x="30%" y="70%" size={100} color="bg-chart-2/8" />
-          <FloatingOrb delay={3} x="80%" y="60%" size={50} color="bg-primary/8" />
+          <GlowOrb className="w-[600px] h-[600px] bg-primary/[0.06] top-[-100px] left-[10%]" delay={0} />
+          <GlowOrb className="w-[500px] h-[500px] bg-chart-3/[0.05] bottom-[10%] right-[5%]" delay={3} />
+          <GlowOrb className="w-[400px] h-[400px] bg-chart-2/[0.04] top-[50%] left-[40%]" delay={6} />
 
-          <svg className="absolute inset-0 w-full h-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
+          <svg className="absolute inset-0 w-full h-full opacity-[0.015] dark:opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <pattern id="login-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" strokeWidth="0.5" />
+              <pattern id="login-grid" width="60" height="60" patternUnits="userSpaceOnUse">
+                <path d="M 60 0 L 0 0 0 60" fill="none" stroke="currentColor" strokeWidth="0.5" />
               </pattern>
             </defs>
             <rect width="100%" height="100%" fill="url(#login-grid)" />
@@ -105,38 +108,40 @@ export default function Login() {
         </div>
 
         <motion.div
-          className="relative z-10 max-w-md text-center lg:text-left space-y-6"
+          className="relative z-10 max-w-lg"
           initial="hidden"
           animate="visible"
-          variants={staggerContainer}
+          variants={stagger}
         >
-          <motion.div variants={fadeUp} custom={0} className="flex items-center gap-3 justify-center lg:justify-start">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-chart-3 flex items-center justify-center text-white text-lg font-bold">
+          <motion.div variants={itemFade} custom={0} className="flex items-center gap-3.5 mb-10">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-chart-3 flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-primary/20">
               D
             </div>
-            <span className="text-xl font-bold text-foreground tracking-tight">DeFi Categorizer</span>
+            <span className="text-2xl font-bold text-foreground tracking-tight">DeFi Categorizer</span>
           </motion.div>
 
-          <motion.h1 variants={fadeUp} custom={1} className="text-3xl md:text-4xl font-bold text-foreground tracking-tight leading-tight">
-            Classify transactions
+          <motion.h1 variants={itemFade} custom={1} className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground tracking-tight leading-[0.95] mb-8">
+            Classify with
             <br />
-            <span className="bg-gradient-to-r from-primary via-chart-3 to-chart-2 bg-clip-text text-transparent">
-              with confidence.
+            <span className="bg-gradient-to-r from-primary via-chart-3 to-chart-2 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient-shift">
+              confidence.
             </span>
           </motion.h1>
 
-          <motion.p variants={fadeUp} custom={2} className="text-muted-foreground text-lg leading-relaxed">
-            Sign in to access your dashboard, import CSVs, and start auto-labeling DeFi transactions with audit-ready precision.
+          <motion.p variants={itemFade} custom={2} className="text-lg text-muted-foreground leading-relaxed mb-10">
+            Sign in to access your dashboard, import transaction CSVs, and start auto-labeling DeFi transactions with audit-ready precision.
           </motion.p>
 
-          <motion.div variants={fadeUp} custom={3} className="space-y-3 pt-2">
+          <motion.div variants={itemFade} custom={3} className="space-y-4">
             {[
               { icon: Shield, text: "Enterprise-grade security" },
               { icon: Zap, text: "Instant transaction classification" },
               { icon: Lock, text: "Your data never leaves your control" },
             ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3 justify-center lg:justify-start">
-                <item.icon className="h-4 w-4 text-chart-2" />
+              <div key={i} className="flex items-center gap-3.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+                  <item.icon className="h-4 w-4 text-emerald-500" />
+                </div>
                 <span className="text-sm text-muted-foreground">{item.text}</span>
               </div>
             ))}
@@ -144,24 +149,24 @@ export default function Login() {
         </motion.div>
       </div>
 
-      <div className="lg:w-1/2 flex items-center justify-center px-8 py-16 lg:py-0">
+      <div className="lg:w-[45%] flex items-center justify-center px-8 lg:px-16 py-20 lg:py-0 border-l-0 lg:border-l">
         <motion.div
-          className="max-w-sm w-full space-y-8"
+          className="max-w-sm w-full space-y-10"
           initial="hidden"
           animate="visible"
-          variants={staggerContainer}
+          variants={stagger}
         >
-          <motion.div variants={fadeUp} custom={0} className="text-center space-y-2">
-            <h2 className="text-2xl font-bold text-foreground">Welcome</h2>
-            <p className="text-muted-foreground">
+          <motion.div variants={itemFade} custom={0} className="space-y-3">
+            <h2 className="text-3xl font-bold text-foreground tracking-tight">Welcome</h2>
+            <p className="text-muted-foreground text-lg">
               Sign in to your account to continue
             </p>
           </motion.div>
 
-          <motion.div variants={fadeUp} custom={1} className="space-y-4">
+          <motion.div variants={itemFade} custom={1} className="space-y-5">
             <Button
               size="lg"
-              className="w-full gap-3 text-base h-12"
+              className="w-full gap-3.5 text-base h-14 rounded-xl shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300"
               onClick={() => { window.location.href = "/api/login"; }}
               data-testid="button-login"
             >
@@ -179,46 +184,40 @@ export default function Login() {
                 <div className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-3 text-muted-foreground">or</span>
+                <span className="bg-background px-4 text-muted-foreground tracking-widest">or</span>
               </div>
             </div>
 
             <Button
               size="lg"
               variant="outline"
-              className="w-full gap-3 text-base h-12"
+              className="w-full gap-3.5 text-base h-14 rounded-xl"
               onClick={() => { window.location.href = "/api/login"; }}
               data-testid="button-login-email"
             >
-              <Mail className="h-5 w-5" />
+              <MailIcon className="h-5 w-5" />
               Continue with email
             </Button>
           </motion.div>
 
-          <motion.p variants={fadeUp} custom={2} className="text-center text-xs text-muted-foreground">
-            By continuing, you agree to our Terms of Service and Privacy Policy.
-            Your account supports Google, GitHub, and email sign-in.
-          </motion.p>
+          <motion.div variants={itemFade} custom={2} className="space-y-4">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <CheckCircle className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+              <span>Supports Google, GitHub, Apple, and email sign-in</span>
+            </div>
+            <p className="text-xs text-muted-foreground/60 leading-relaxed">
+              By continuing, you agree to our Terms of Service and Privacy Policy.
+            </p>
+          </motion.div>
         </motion.div>
       </div>
     </div>
   );
 }
 
-function Mail(props: React.SVGProps<SVGSVGElement> & { className?: string }) {
+function MailIcon(props: React.SVGProps<SVGSVGElement> & { className?: string }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
       <rect width="20" height="16" x="2" y="4" rx="2" />
       <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
     </svg>

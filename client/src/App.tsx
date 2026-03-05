@@ -37,64 +37,51 @@ function Navbar() {
 
   return (
     <motion.nav
-      className="fixed top-0 left-0 right-0 z-50 border-b bg-background/80 backdrop-blur-md"
-      initial={{ y: -48 }}
+      className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/60 backdrop-blur-xl backdrop-saturate-150"
+      initial={{ y: -56 }}
       animate={{ y: 0 }}
-      transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+      transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
     >
-      <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
-        <Link href="/" className="flex items-center gap-2.5 font-semibold text-sm text-foreground" data-testid="link-home">
-          <div className="w-7 h-7 rounded-md bg-gradient-to-br from-primary to-chart-3 flex items-center justify-center text-white text-xs font-bold">
+      <div className="max-w-7xl mx-auto px-6 md:px-10 h-14 flex items-center justify-between gap-4">
+        <Link href="/" className="flex items-center gap-2.5 font-semibold text-sm text-foreground group" data-testid="link-home">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-chart-3 flex items-center justify-center text-white text-sm font-bold shadow-sm group-hover:shadow-md group-hover:shadow-primary/20 transition-shadow duration-300">
             D
           </div>
           <span className="tracking-tight hidden sm:inline">DeFi Categorizer</span>
         </Link>
 
-        <div className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
-          <Link
-            href="/"
-            className={`hover:text-foreground transition-colors ${location === "/" ? "text-foreground font-medium" : ""}`}
-            data-testid="link-nav-home"
-          >
-            Home
-          </Link>
-          {isAuthenticated && (
-            <>
-              <Link
-                href="/import"
-                className={`hover:text-foreground transition-colors ${location === "/import" ? "text-foreground font-medium" : ""}`}
-                data-testid="link-nav-import"
-              >
-                Import
-              </Link>
-              <Link
-                href="/review"
-                className={`hover:text-foreground transition-colors ${location === "/review" ? "text-foreground font-medium" : ""}`}
-                data-testid="link-nav-review"
-              >
-                Review
-              </Link>
-            </>
-          )}
-          <Link
-            href="/contact"
-            className={`hover:text-foreground transition-colors ${location === "/contact" ? "text-foreground font-medium" : ""}`}
-            data-testid="link-nav-contact"
-          >
-            Contact
-          </Link>
+        <div className="hidden md:flex items-center gap-1 text-sm">
+          {[
+            { href: "/", label: "Home", testId: "link-nav-home", show: true },
+            { href: "/import", label: "Import", testId: "link-nav-import", show: isAuthenticated },
+            { href: "/review", label: "Review", testId: "link-nav-review", show: isAuthenticated },
+            { href: "/contact", label: "Contact", testId: "link-nav-contact", show: true },
+          ].filter(item => item.show).map(item => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`px-3.5 py-1.5 rounded-lg transition-all duration-200 ${
+                location === item.href
+                  ? "text-foreground font-medium bg-muted/60"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
+              }`}
+              data-testid={item.testId}
+            >
+              {item.label}
+            </Link>
+          ))}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <ThemeToggle />
           {!isLoading && (
             isAuthenticated ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 {user?.profileImageUrl ? (
                   <img
                     src={user.profileImageUrl}
                     alt=""
-                    className="w-7 h-7 rounded-full border"
+                    className="w-7 h-7 rounded-full border shadow-sm"
                     data-testid="img-user-avatar"
                   />
                 ) : (
@@ -108,7 +95,7 @@ function Navbar() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 gap-1.5 text-xs"
+                  className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
                   onClick={() => { window.location.href = "/api/logout"; }}
                   data-testid="button-logout"
                 >
@@ -118,9 +105,8 @@ function Navbar() {
               </div>
             ) : !isLoginPage ? (
               <Button
-                variant="default"
                 size="sm"
-                className="h-8 gap-1.5 text-xs"
+                className="h-8 px-4 gap-1.5 text-xs rounded-lg shadow-sm"
                 onClick={() => { window.location.href = "/api/login"; }}
                 data-testid="button-nav-login"
               >
