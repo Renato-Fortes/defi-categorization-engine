@@ -50,5 +50,12 @@ export const bulkUpdateSchema = z.object({
 
 export type BulkUpdate = z.infer<typeof bulkUpdateSchema>;
 
+export const walletImportSchema = z.object({
+  walletAddress: z.string().min(1, "Wallet address is required"),
+  chain: z.string().min(1, "Chain is required"),
+});
+
+export type WalletImport = z.infer<typeof walletImportSchema>;
+
 export * from "./models/auth";
 export * from "./models/transactions";

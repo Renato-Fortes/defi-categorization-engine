@@ -44,6 +44,16 @@ User data is persisted to PostgreSQL via Drizzle ORM (`AuthStorage` in `server/r
 
 The `/import` and `/review` nav routes are only shown when `isAuthenticated` is true (enforced in `App.tsx` navbar).
 
+### Wallet import via Noves
+
+`server/noves.ts` contains the Noves Translate API client. Key points:
+- Endpoint: `GET https://translate.noves.fi/evm/{chain}/txs/{walletAddress}` with `apiKey` header
+- Paginates up to 5 pages (500 tx) per import; `truncated: true` in response if more exist
+- `TYPE_MAP` maps Noves types (`swap`, `claimRewards`, `addLiquidity`, etc.) to accounting labels
+- `IGNORE_TYPES` drops `approve`/`approval`/`revoke` — no accounting impact
+- Supported chains are defined in `NOVES_CHAINS` (both `server/noves.ts` and duplicated in `import-page.tsx`)
+- `GET /api/wallet/chains` returns the chain list without auth
+
 ### Classification rules
 
 Current rules in `server/classifier.ts`:
@@ -64,6 +74,7 @@ The default `AAVE_POOL_ADDRESS` is the Arbitrum V3 pool (`0x794a61358D6845594F94
 | `SESSION_SECRET` | Express session secret |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth credentials |
 | `RESEND_API_KEY` | Resend email API key for verification emails |
+| `NOVES_API_KEY` | Noves Translate API key for wallet import (`server/noves.ts`) |
 
 ### Frontend routing
 

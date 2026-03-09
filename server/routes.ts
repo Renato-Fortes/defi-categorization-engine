@@ -5,7 +5,7 @@ import {
   importRequestSchema,
   classifyRequestSchema,
   exportRequestSchema,
-  transactionSchema,
+  walletImportSchema,
 } from "@shared/schema";
 import { userTransactions, transactionCorrections } from "@shared/schema";
 import { randomUUID } from "crypto";
@@ -15,6 +15,7 @@ import { eq } from "drizzle-orm";
 import { isAuthenticated } from "./replit_integrations/auth/replitAuth";
 import type { Transaction } from "@shared/schema";
 import { z } from "zod";
+import { fetchNovesTransactions, NOVES_CHAINS } from "./noves";
 
 // ---------------------------------------------------------------------------
 // Column maps for format detection
@@ -427,6 +428,57 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       return res.json({ csv });
     } catch (err: any) {
       return res.status(400).json({ message: err.message || "Export failed" });
+    }
+  });
+
+  // GET /api/wallet/chains — list of chains supported for wallet import
+  app.get("/api/wallet/chains", (_req, res) => {
+    return res.json({ chains: NOVES_CHAINS });
+  });
+
+  // POST /api/import/wallet — fetch and classify transactions via Noves Translate API
+  app.post("/api/import/wallet", isAuthenticated, async (req, res) => {
+    try {
+      const { walletAddress, chain } = walletImportSchema.parse(req.body);
+
+      const apiKey = process.env.NOVES_API_KEY;
+      if (!apiKey) {
+        return res.status(503).json({
+          message: "NOVES_API_KEY is not configured. Add it to your environment variables.",
+        });
+      }
+
+      const { transactions, truncated } = await fetchNovesTransactions(
+        chain,
+        walletAddress,
+        apiKey
+      );
+
+      if (transactions.length === 0) {
+        return res.status(404).json({
+          message: `No transactions found for ${walletAddress} on ${chain}. The wallet may be empty or the chain slug may be incorrect.`,
+        });
+      }
+
+      // Replace user's existing transactions in DB
+      const userId = req.session.userId!;
+      await db.delete(userTransactions).where(eq(userTransactions.userId, userId));
+      await db.insert(userTransactions).values(
+        transactions.map((tx) => ({ ...tx, userId }))
+      );
+
+      return res.json({
+        transactions,
+        truncated,
+        total: transactions.length,
+        source: "noves",
+        chain,
+        walletAddress,
+      });
+    } catch (err: any) {
+      const status =
+        err.message?.includes("invalid") || err.message?.includes("not found") ? 400 : 500;
+      return res.status(status).json({ message: err.message || "Wallet import failed" });
     }
   });
 
