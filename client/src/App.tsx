@@ -8,6 +8,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/use-auth";
+import { useEffect, type ComponentType } from "react";
 import { LogIn, LogOut, User } from "lucide-react";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
@@ -18,12 +19,39 @@ import Login from "@/pages/login";
 import Register from "@/pages/register";
 import VerifyEmail from "@/pages/verify-email";
 
+function ProtectedRoute({ component: Component }: { component: ComponentType }) {
+  const { isAuthenticated, isLoading } = useAuth();
+  const [, navigate] = useLocation();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigate("/login");
+    }
+  }, [isLoading, isAuthenticated, navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <motion.div
+          className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) return null;
+
+  return <Component />;
+}
+
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
-      <Route path="/import" component={ImportPage} />
-      <Route path="/review" component={ReviewPage} />
+      <Route path="/import" component={() => <ProtectedRoute component={ImportPage} />} />
+      <Route path="/review" component={() => <ProtectedRoute component={ReviewPage} />} />
       <Route path="/contact" component={Contact} />
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />

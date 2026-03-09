@@ -51,3 +51,4 @@ export const bulkUpdateSchema = z.object({
 export type BulkUpdate = z.infer<typeof bulkUpdateSchema>;
 
 export * from "./models/auth";
+export * from "./models/transactions";

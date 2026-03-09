@@ -356,7 +356,7 @@ export default function Landing() {
                   size="lg"
                   variant="outline"
                   className="h-13 px-8 text-base gap-2.5 rounded-xl"
-                  onClick={() => navigate("/import?sample=true")}
+                  onClick={() => navigate(isAuthenticated ? "/import?sample=true" : "/login")}
                   data-testid="button-try-sample"
                 >
                   Try sample dataset

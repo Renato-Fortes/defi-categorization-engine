@@ -95,13 +95,20 @@ export default function ImportPage() {
     try {
       const res = await apiRequest("POST", "/api/import", {
         csvText,
+        // Pass "koinly" when toggle is on; otherwise send "generic" to trigger auto-detection
         format: isKoinly ? "koinly" : "generic",
       });
       const data = await res.json();
       setTransactions(data.transactions);
+      const formatLabel =
+        data.detectedFormat === "koinly"
+          ? "Koinly"
+          : data.detectedFormat === "cryptio"
+          ? "Cryptio"
+          : "generic";
       toast({
         title: "Import successful",
-        description: `Imported ${data.transactions.length} transactions.`,
+        description: `Imported ${data.transactions.length} transactions (detected: ${formatLabel}).`,
       });
       navigate("/review");
     } catch (err: any) {
