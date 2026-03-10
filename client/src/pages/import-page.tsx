@@ -462,7 +462,7 @@ function WalletImportTab({
                     {result.truncated && (
                       <p className="text-xs text-chart-4 mt-1 flex items-center gap-1">
                         <AlertTriangle className="h-3 w-3" />
-                        Showing first 500 transactions — older history was truncated.
+                        Showing first 250 transactions — older history was truncated.
                       </p>
                     )}
                   </div>

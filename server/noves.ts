@@ -178,7 +178,7 @@ export async function fetchNovesTransactions(
 ): Promise<{ transactions: Transaction[]; truncated: boolean }> {
   const transactions: Transaction[] = [];
   let url: string | null =
-    `${NOVES_BASE_URL}/evm/${chain}/txs/${walletAddress}?pageSize=100`;
+    `${NOVES_BASE_URL}/evm/${chain}/txs/${walletAddress}?pageSize=50`;
   let page = 0;
   let truncated = false;
 
